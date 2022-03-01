@@ -1,3 +1,3 @@
 # SLDL 
 
-^ Structure License Description Languages. *
+* Structure License Description Languages. *
