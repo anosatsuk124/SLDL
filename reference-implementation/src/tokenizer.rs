@@ -42,31 +42,36 @@ impl Tokenizer {
             match self.peek() {
                 None => return None,
                 Some(c) => match c {
-                    'A'..='Z' => {
-                        let mut s = String::new();
-                        s.push(c);
-                        self.pop();
-                        while let Some(c @ 'a'..='z') = self.peek() {
-                            self.pop();
-                            s.push(c);
-                        }
-                        match &*s {
-                            "Sentence" => {
-                                self.pop();
-                                return Some(Token::Op(s.to_string()));
-                            }
-                            _ => (),
-                        }
-                    }
-
+                    'A'..='Z' => return self.tokenize_struct(),
                     c if c.is_ascii() => {
                         self.pop();
                         return self.tokenize_sentence();
                     }
+                    c if c.is_whitespace() => self.skip_whitespace(),
                     c => panic!("Unexpected char: {}:{}", c, self.pos),
                 },
             }
         }
+    }
+
+    fn tokenize_struct(&mut self) -> Option<Token> {
+        while let Some(c) = self.peek() {
+            let mut s = String::new();
+            s.push(c);
+            self.pop();
+            while let Some(c @ 'a'..='z') = self.peek() {
+                self.pop();
+                s.push(c);
+            }
+            match &*s {
+                "Sentence" => {
+                    self.pop();
+                    return Some(Token::Op(s.to_string()));
+                }
+                _ => return Some(Token::Predicate(s.to_string())),
+            }
+        }
+        None
     }
 
     fn tokenize_sentence(&mut self) -> Option<Token> {
@@ -84,13 +89,8 @@ impl Tokenizer {
                 '"' | 'a'..='z' => {
                     return self.tokenize_str();
                 }
-                'A'..='z' => {
-                    let mut s = String::new();
-                    while let Some(c @ 'A'..='z') = self.peek() {
-                        s.push(c);
-                        self.pop();
-                    }
-                    return Some(Token::Predicate(s));
+                'A'..='Z' => {
+                    return self.tokenize_struct();
                 }
                 c if c.is_whitespace() => {
                     self.skip_whitespace();
