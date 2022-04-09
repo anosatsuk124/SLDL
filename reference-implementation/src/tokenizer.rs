@@ -2,13 +2,14 @@ use std::panic;
 
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub enum Token {
-    TkType(String),
-    TkPredicate(String),
-    TkVariable(String),
-    TkAtom(String),
-    TkSentence(String),
-    TkMain,
-    TkEOF,
+    Type(String),
+    Predicate(String),
+    Variable(String),
+    Atom(String),
+    SentenceString(String),
+    Op(String),
+    Main,
+    EOF,
 }
 
 #[derive(Clone, Debug)]
@@ -54,7 +55,8 @@ impl Tokenizer {
                         }
                         match &*s {
                             "Sentence" => {
-                                return self.tokenize_sentence();
+                                self.pop();
+                                return Some(Token::Op(s.to_string()));
                             }
                             _ => (),
                         }
@@ -72,30 +74,17 @@ impl Tokenizer {
     fn tokenize_sentence(&mut self) -> Option<Token> {
         while let Some(c) = self.peek() {
             match c {
-                '-' => {
-                    self.pop();
-                    if self.peek() == Some('>') {
-                        self.pop();
-                    }
+                '-' | '+' => {
+                    return self.tokenize_op();
                 }
                 '{' | '}' | ')' => {
-                    self.pop();
+                    break;
                 }
                 '(' | ',' => {
-                    self.pop();
-                    let mut s = String::new();
-                    self.skip_whitespace();
+                    break;
                 }
-                '`' => {
-                    return Some(Token::TkSentence((self.tokenize_str().unwrap())));
-                }
-                'a'..='z' => {
-                    let mut s = String::new();
-                    while let Some(c @ 'a'..='z') = self.peek() {
-                        s.push(c);
-                        self.pop();
-                    }
-                    return Some(Token::TkVariable(s));
+                '"' | 'a'..='z' => {
+                    return self.tokenize_str();
                 }
                 'A'..='z' => {
                     let mut s = String::new();
@@ -103,9 +92,10 @@ impl Tokenizer {
                         s.push(c);
                         self.pop();
                     }
-                    return Some(Token::TkPredicate(s));
+                    return Some(Token::Predicate(s));
                 }
                 c if c.is_whitespace() => {
+                    println!("{}", c);
                     self.skip_whitespace();
                 }
                 c => panic!("Unexpected char: {}:{}", c, self.pos),
@@ -121,23 +111,43 @@ impl Tokenizer {
                     self.pop();
                 }
                 _ => {
+                    println!("{}", c);
                     break;
                 }
             }
         }
     }
 
-    fn tokenize_str(&mut self) -> Option<String> {
-        while let Some(c) = self.peek() {
+    fn tokenize_op(&mut self) -> Option<Token> {
+        if let Some(c) = self.peek() {
+            match c {
+                '-' => {
+                    self.pop();
+                    if let Some('>') = self.peek() {
+                        return Some(Token::Op("->".to_string()));
+                    }
+                }
+                '+' => {
+                    return Some(Token::Op(c.to_string()));
+                }
+                _ => {
+                    panic!("Unexpected char: {}:{}", c, self.pos);
+                }
+            }
+        }
+        None
+    }
+
+    fn tokenize_str(&mut self) -> Option<Token> {
+        if let Some(c) = self.peek() {
             let mut s = String::new();
             match c {
-                '`' => {
+                '"' => {
                     self.pop();
-
                     while let Some(c) = self.peek() {
                         match c {
-                            '`' => {
-                                return Some(s);
+                            '"' => {
+                                return Some(Token::SentenceString(s));
                             }
                             _ => {
                                 s.push(c);
@@ -146,8 +156,21 @@ impl Tokenizer {
                         }
                     }
                 }
+                'a'..='z' => {
+                    while let Some(c) = self.peek() {
+                        match c {
+                            'a'..='z' => {
+                                s.push(c);
+                                self.pop();
+                            }
+                            _ => {
+                                return Some(Token::Variable(s));
+                            }
+                        }
+                    }
+                }
                 _ => {
-                    return Some(s);
+                    panic!("Unexpected char: {}:{}", c, self.pos);
                 }
             }
         }
