@@ -42,7 +42,7 @@ impl Tokenizer {
             match self.peek() {
                 None => return None,
                 Some(c) => match c {
-                    c @ 'A'..='Z' => {
+                    'A'..='Z' => {
                         let mut s = String::new();
                         s.push(c);
                         self.pop();
@@ -58,6 +58,7 @@ impl Tokenizer {
                             _ => (),
                         }
                     }
+
                     c if c.is_ascii() => {
                         self.pop();
                         return self.tokenize_sentence();
