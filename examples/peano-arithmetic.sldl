@@ -1,32 +1,35 @@
 Type number {
-    suc X
-    e
+    suc(X),
+    e,
+}
+
+Atom {
+    e,
 }
 
 Predicate {
-    e
-    suc n: number: number -> {
-        suc e
-        suc X
+    suc(n: number) -> {
+        suc(e)
+        suc(X)
     }
-    eq x: number, y: number -> {
-        eq e e
-        eq suc(X) suc(X)
-    }
-    add x: number, y: number, z: number -> {
-        add X e X
-        add X suc(e) suc(X)
-    }
+    eq(x: number, y: number) -> {
+        eq(e, e)
+        eq(suc(X), suc(X)),
+    },
+    add(x: number, y: number, z: number) -> {
+        add(X, e, X),
+        add(X, suc(e), suc(X)),
+    },
 }
 
 Sentence {
-    suc n -> `The succesor of $n`
-    add x y z -> `The sum of $x and $y is $z`
-    eq x y -> `$x is equals to $y`
+    suc(n) -> `The succesor of $n`,
+    add(x, y, z) -> `The sum of $x and $y is $z`,
+    eq(x, y) -> `$x is equals to $y`,
 }
 
 Main {
-    <add x y z>
+    <add(x, y, z)>
         <add::x suc(e) />
         <add::y suc(suc(e)) />
         <add::z suc(suc(suc(e))) />
