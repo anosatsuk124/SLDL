@@ -25,7 +25,7 @@ Sentence {
     eq x, y -> x + "と" + y + "は等しい",
 }
 
-main {
+Main {
     <add x y z>
         <add::x suc(e) />
         <add::y suc(suc(e)) />
