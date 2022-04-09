@@ -1,110 +1,142 @@
 use std::panic;
 
 #[derive(PartialEq, Eq, Clone, Debug)]
-enum TokenKind {
-    TkType,
-    TkPredicate,
-    TkSentenceName(String),
-    TkSentenceVar(String),
-    TkSentenceDef(String),
+pub enum Token {
+    TkType(String),
+    TkPredicate(String),
+    TkVariable(String),
+    TkAtom(String),
+    TkSentencePredicate(String),
+    TkSentence(String),
     TkMain,
     TkEOF,
 }
 
 #[derive(Clone, Debug)]
-pub struct Token {
-    kind: TokenKind,
+pub struct Tokenizer {
+    pos: usize,
+    input: String,
+    next_token: Option<Token>,
 }
 
-impl Token {
-    fn new(kind: TokenKind) -> Self {
-        Token { kind }
+impl Tokenizer {
+    pub fn new(input: String) -> Self {
+        Self {
+            pos: 0,
+            input,
+            next_token: None,
+        }
     }
 
-    pub fn tokenize(code: Vec<String>) -> Vec<Self> {
-        let mut code = code.into_iter().peekable();
-        let mut tokens = Vec::new();
-        while let Some(token) = code.next() {
-            match &*token {
-                "Type" => (),
-                "Predicate" => (),
-                "Sentence" => {
-                    let token = consume(&mut code, "{").unwrap();
-                    tokens.push(Self::new(TokenKind::TkSentenceName(token))); // expect Sentence name
-                    while let Some(token) = code.next() {
-                        //let token = code.next().unwrap();
-                        println!("{:?}", token);
-                        match &*token {
-                            "->" => {
-                                panic!("sentence predicate needs 1 or more variables");
-                            }
-                            _ => {
-                                tokens.push(Self::new(TokenKind::TkSentenceVar(token)));
-                                while let Some(token) = code.next() {
-                                    match &*token {
-                                        "->" => {
-                                            let str = consume_str(&mut code);
-                                            tokens.push(Self::new(TokenKind::TkSentenceDef(str)));
-                                            break;
-                                        }
-                                        _ => {
-                                            tokens.push(Self::new(TokenKind::TkSentenceVar(token)));
-                                        }
-                                    }
-                                }
-                            }
-                        }
+    fn peek(&self) -> Option<char> {
+        self.input.chars().nth(self.pos)
+    }
+
+    fn pop(&mut self) -> Option<char> {
+        self.pos += 1;
+        self.input.chars().nth(self.pos - 1)
+    }
+
+    fn tokenize(&mut self) -> Option<Token> {
+        loop {
+            match self.peek() {
+                None => return None,
+                Some(c) => match c {
+                    c if c.is_whitespace() => {
+                        self.pop();
                     }
-                }
-                "Main" => (),
+                    c @ 'A'..='Z' => {
+                        let mut s = String::new();
+                        s.push(c);
+                        self.pop();
+                        while let Some(c @ 'a'..='z') = self.peek() {
+                            self.pop();
+                            s.push(c);
+                        }
+                        match &*s {
+                            "Sentence" => {
+                                self.pop();
+                                self.tokenize_sentence();
+                            }
+                            _ => (),
+                        }
+                        return Some(Token::TkSentence(s));
+                    }
+                    c => panic!("Unexpected char: {}", c),
+                },
                 _ => (),
             }
         }
-        tokens.into_iter().rev().collect()
     }
-}
 
-fn consume_str(code: &mut impl Iterator<Item = String>) -> String {
-    let mut str = String::new();
-    while let Some(token) = code.peekable().peek() {
-        match &*token {
-            s if s.contains("`") => {
-                str.push_str(s);
-                while let Some(token) = code.peekable().peek() {
-                    match &*token {
-                        s if s.contains("`") => {
-                            str.push_str(s);
-                            break;
-                        }
-                        x => {
-                            str.push_str(x);
-                        }
-                    }
+    fn tokenize_sentence(&mut self) -> Option<Token> {
+        while let Some(c) = self.peek() {
+            match c {
+                '{' | '}' | ')' => {
+                    self.pop();
                 }
+                '(' | ',' => {
+                    self.pop();
+
+                    let mut s = String::new();
+                    while let Some(c @ 'A'..='z') = self.peek() {
+                        self.pop();
+                        s.push(c);
+                    }
+                    return Some(Token::TkVariable(s));
+                }
+                c if !c.is_whitespace() => {
+                    let mut s = String::new();
+                    while let Some(c @ 'a'..='z') = self.peek() {
+                        self.pop();
+                        s.push(c);
+                    }
+                    return Some(Token::TkSentencePredicate(s));
+                }
+                c => panic!("Unexpected char: {}", c),
             }
-            _ => break,
         }
+        None
     }
 
-    str
-}
+    fn peek_token(&mut self) -> &Option<Token> {
+        if self.next_token.is_none() {
+            self.next_token = self.tokenize();
+        }
+        println!("peek: {:?}", self.next_token);
+        &self.next_token
+    }
 
-fn consume(code: &mut impl Iterator<Item = String>, consumed_str: &str) -> Option<String> {
-    if let Some(token) = code.next() {
-        if token.contains(consumed_str) {
-            return code.next();
+    fn pop_token(&mut self) -> Option<Token> {
+        if self.next_token.is_none() {
+            self.next_token = self.tokenize();
+        }
+        println!("pop: {:?}", self.next_token);
+        self.next_token.take()
+    }
+
+    fn consume(&mut self, token: Token) -> bool {
+        if self.peek_token() == &Some(token) {
+            self.next_token.take();
+            true
         } else {
-            eprintln!("{:?}", token);
+            false
         }
     }
-    panic!("could not tokenize");
+
+    fn expect(&mut self, token: Token) {
+        if self.peek_token().as_ref() == Some(&token) {
+            self.next_token.take();
+        } else {
+            panic!("Expected: {:?}", token);
+        }
+    }
 }
 
-fn expect(code: &mut impl Iterator<Item = String>, expected_str: &str) -> bool {
-    if let Some(token) = code.next() {
-        if token.contains(expected_str) {
-            return true;
-        }
+impl Iterator for Tokenizer {
+    type Item = Token;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.pop_token()
     }
-    false
 }
