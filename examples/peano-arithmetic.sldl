@@ -1,28 +1,28 @@
 Type number {
-    suc X,
-    e,
+    suc X
+    e
 }
 
 Predicate {
-    e,
+    e
     suc n: number: number -> {
-        suc e,
-        suc X,
-    },
+        suc e
+        suc X
+    }
     eq x: number, y: number -> {
-        eq e, e,
-        eq suc(X), suc(X),
-    },
+        eq e e
+        eq suc(X) suc(X)
+    }
     add x: number, y: number, z: number -> {
-        add X, e, X,
-        add X, suc(e), suc(X),
-    },
+        add X e X
+        add X suc(e) suc(X)
+    }
 }
 
 Sentence {
-    suc n -> n + "の後者",
-    add x, y, z -> x + "と" + y + "の和は" + z,
-    eq x, y -> x + "と" + y + "は等しい",
+    suc n -> `The succesor of $n`
+    add x y z -> `The sum of $x and $y is $z`
+    eq x y -> `$x is equals to $y`
 }
 
 Main {
