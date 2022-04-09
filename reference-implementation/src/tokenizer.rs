@@ -6,7 +6,6 @@ pub enum Token {
     TkPredicate(String),
     TkVariable(String),
     TkAtom(String),
-    TkSentencePredicate(String),
     TkSentence(String),
     TkMain,
     TkEOF,
@@ -37,7 +36,7 @@ impl Tokenizer {
         self.input.chars().nth(self.pos - 1)
     }
 
-    fn tokenize(&mut self) -> Option<Token> {
+    pub fn tokenize(&mut self) -> Option<Token> {
         loop {
             match self.peek() {
                 None => return None,
@@ -55,16 +54,17 @@ impl Tokenizer {
                         }
                         match &*s {
                             "Sentence" => {
-                                self.pop();
-                                self.tokenize_sentence();
+                                return self.tokenize_sentence();
                             }
                             _ => (),
                         }
-                        return Some(Token::TkSentence(s));
                     }
-                    c => panic!("Unexpected char: {}", c),
+                    c if c.is_ascii() => {
+                        self.pop();
+                        return self.tokenize_sentence();
+                    }
+                    c => panic!("Unexpected char: {}:{}", c, self.pos),
                 },
-                _ => (),
             }
         }
     }
@@ -72,28 +72,83 @@ impl Tokenizer {
     fn tokenize_sentence(&mut self) -> Option<Token> {
         while let Some(c) = self.peek() {
             match c {
+                '-' => {
+                    self.pop();
+                    if self.peek() == Some('>') {
+                        self.pop();
+                    }
+                }
                 '{' | '}' | ')' => {
                     self.pop();
                 }
                 '(' | ',' => {
                     self.pop();
-
                     let mut s = String::new();
-                    while let Some(c @ 'A'..='z') = self.peek() {
-                        self.pop();
+                    self.skip_whitespace();
+                }
+                '`' => {
+                    return Some(Token::TkSentence((self.tokenize_str().unwrap())));
+                }
+                'a'..='z' => {
+                    let mut s = String::new();
+                    while let Some(c @ 'a'..='z') = self.peek() {
                         s.push(c);
+                        self.pop();
                     }
                     return Some(Token::TkVariable(s));
                 }
-                c if !c.is_whitespace() => {
+                'A'..='z' => {
                     let mut s = String::new();
-                    while let Some(c @ 'a'..='z') = self.peek() {
-                        self.pop();
+                    while let Some(c @ 'A'..='z') = self.peek() {
                         s.push(c);
+                        self.pop();
                     }
-                    return Some(Token::TkSentencePredicate(s));
+                    return Some(Token::TkPredicate(s));
                 }
-                c => panic!("Unexpected char: {}", c),
+                c if c.is_whitespace() => {
+                    self.skip_whitespace();
+                }
+                c => panic!("Unexpected char: {}:{}", c, self.pos),
+            }
+        }
+        None
+    }
+
+    fn skip_whitespace(&mut self) {
+        while let Some(c) = self.peek() {
+            match c {
+                c if c.is_whitespace() => {
+                    self.pop();
+                }
+                _ => {
+                    break;
+                }
+            }
+        }
+    }
+
+    fn tokenize_str(&mut self) -> Option<String> {
+        while let Some(c) = self.peek() {
+            let mut s = String::new();
+            match c {
+                '`' => {
+                    self.pop();
+
+                    while let Some(c) = self.peek() {
+                        match c {
+                            '`' => {
+                                return Some(s);
+                            }
+                            _ => {
+                                s.push(c);
+                                self.pop();
+                            }
+                        }
+                    }
+                }
+                _ => {
+                    return Some(s);
+                }
             }
         }
         None
@@ -107,7 +162,7 @@ impl Tokenizer {
         &self.next_token
     }
 
-    fn pop_token(&mut self) -> Option<Token> {
+    pub fn pop_token(&mut self) -> Option<Token> {
         if self.next_token.is_none() {
             self.next_token = self.tokenize();
         }

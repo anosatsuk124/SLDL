@@ -1,0 +1,5 @@
+Sentence {
+    Suc(n) -> `The succesor of $n`,
+    Add(x, y, z) -> `The sum of $x and $y is $z`,
+    Eq(x, y) -> `$x is equals to $y`,
+}

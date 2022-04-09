@@ -1,3 +1,4 @@
+mod parser;
 mod tokenizer;
 use std::fs;
 
@@ -7,7 +8,13 @@ fn main() {
 
     let code = fs::read_to_string(filepath).unwrap();
 
-    let code_splited: Vec<String> = code.split_whitespace().map(|s| s.to_string()).collect();
-
-    println!("{:?}", tokenizer::Token::tokenize(code_splited));
+    let mut token = tokenizer::Tokenizer::new(code);
+    loop {
+        let tokenized = token.tokenize();
+        if !tokenized.is_none() {
+            println!("{:?}", tokenized);
+        } else {
+            break;
+        }
+    }
 }
