@@ -42,7 +42,7 @@ impl Tokenizer {
             match self.peek() {
                 None => return None,
                 Some(c) => match c {
-                    'A'..='Z' => return self.tokenize_struct(),
+                    'A'..='Z' => return self.tokenize_uppercase(),
                     c if c.is_ascii() => {
                         self.pop();
                         return self.tokenize_sentence();
@@ -54,7 +54,7 @@ impl Tokenizer {
         }
     }
 
-    fn tokenize_struct(&mut self) -> Option<Token> {
+    fn tokenize_uppercase(&mut self) -> Option<Token> {
         while let Some(c) = self.peek() {
             let mut s = String::new();
             s.push(c);
@@ -90,7 +90,7 @@ impl Tokenizer {
                     return self.tokenize_str();
                 }
                 'A'..='Z' => {
-                    return self.tokenize_struct();
+                    return self.tokenize_uppercase();
                 }
                 c if c.is_whitespace() => {
                     self.skip_whitespace();
