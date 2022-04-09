@@ -1,0 +1,8 @@
+Program = Sentences
+Sentences = Sentence*
+Sentence = Predicate SentenceDef
+Predicate = PredicateName "(" Predicate* ")" | PredicateName "(" Atom* ")"
+Atom = <lowercase letter>*
+PredicateName = upper-camelcase
+upper-camelcase = <uppercase letter> ( <uppercase letter> | <lowercase letter> )*
+SentenceDef = <string>
