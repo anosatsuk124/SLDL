@@ -1,3 +1,7 @@
-# SLDL
+# SLDL ( Structured License Description Language )
 
-**Structured License Description Languages.**
+A markup language to make your license description structured.
+
+This is influenced by:
+    - XML
+    - Prolog
