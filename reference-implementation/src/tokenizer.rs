@@ -42,9 +42,6 @@ impl Tokenizer {
             match self.peek() {
                 None => return None,
                 Some(c) => match c {
-                    c if c.is_whitespace() => {
-                        self.pop();
-                    }
                     c @ 'A'..='Z' => {
                         let mut s = String::new();
                         s.push(c);
@@ -95,7 +92,6 @@ impl Tokenizer {
                     return Some(Token::Predicate(s));
                 }
                 c if c.is_whitespace() => {
-                    println!("{}", c);
                     self.skip_whitespace();
                 }
                 c => panic!("Unexpected char: {}:{}", c, self.pos),
@@ -111,7 +107,6 @@ impl Tokenizer {
                     self.pop();
                 }
                 _ => {
-                    println!("{}", c);
                     break;
                 }
             }
