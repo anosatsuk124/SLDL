@@ -1,5 +1,5 @@
 Type number {
-    suc(X),
+    Suc(X),
     e,
 }
 
@@ -9,23 +9,23 @@ Atom {
 
 Predicate {
     Suc(n: number) -> {
-        suc(e)
-        suc(X)
+        Suc(e)
+        Suc(X)
     }
     Eq(x: number, y: number) -> {
-        eq(e, e)
-        eq(suc(X), suc(X)),
+        Eq(e, e)
+        Eq(Suc(X), Suc(X)),
     },
     Add(x: number, y: number, z: number) -> {
-        add(X, e, X),
-        add(X, suc(e), suc(X)),
+        Add(X, e, X),
+        Add(X, Suc(e), Suc(X)),
     },
 }
 
 Sentence {
-    Suc(n) -> `The succesor of $n`,
-    Add(x, y, z) -> `The sum of $x and $y is $z`,
-    Eq(x, y) -> `$x is equals to $y`,
+    Suc(n) -> "The succesor of" + n,
+    Add(x, y, z) -> "The sum of" + x + "and" + y + z,
+    Eq(x, y) -> x + "is equals to" + y,
 }
 
 Main {
