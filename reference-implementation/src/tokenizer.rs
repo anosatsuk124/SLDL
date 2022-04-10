@@ -42,7 +42,7 @@ impl Tokenizer {
             match self.peek() {
                 None => return None,
                 Some(c) => match c {
-                    'A'..='Z' => return self.tokenize_uppercase(),
+                    'A'..='Z' => return self.tokenize_str(),
                     c if c.is_ascii() => {
                         self.pop();
                         return self.tokenize_sentence();
@@ -52,26 +52,6 @@ impl Tokenizer {
                 },
             }
         }
-    }
-
-    fn tokenize_uppercase(&mut self) -> Option<Token> {
-        while let Some(c) = self.peek() {
-            let mut s = String::new();
-            s.push(c);
-            self.pop();
-            while let Some(c @ 'a'..='z') = self.peek() {
-                self.pop();
-                s.push(c);
-            }
-            match &*s {
-                "Sentence" => {
-                    self.pop();
-                    return Some(Token::Op(s.to_string()));
-                }
-                _ => return Some(Token::Predicate(s.to_string())),
-            }
-        }
-        None
     }
 
     fn tokenize_sentence(&mut self) -> Option<Token> {
@@ -86,11 +66,8 @@ impl Tokenizer {
                 '(' | ',' => {
                     break;
                 }
-                '"' | 'a'..='z' => {
+                '"' | 'A'..='z' => {
                     return self.tokenize_str();
-                }
-                'A'..='Z' => {
-                    return self.tokenize_uppercase();
                 }
                 c if c.is_whitespace() => {
                     self.skip_whitespace();
@@ -150,6 +127,21 @@ impl Tokenizer {
                                 self.pop();
                             }
                         }
+                    }
+                }
+                'A'..='Z' => {
+                    s.push(c);
+                    self.pop();
+                    while let Some(c @ 'a'..='z') = self.peek() {
+                        self.pop();
+                        s.push(c);
+                    }
+                    match &*s {
+                        "Sentence" => {
+                            self.pop();
+                            return Some(Token::Op(s.to_string()));
+                        }
+                        _ => return Some(Token::Predicate(s.to_string())),
                     }
                 }
                 'a'..='z' => {
