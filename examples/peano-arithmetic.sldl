@@ -11,7 +11,7 @@ Predicate {
     Suc(n: number) -> {
         Suc(e)
         Suc(X)
-    }
+    },
     Eq(x: number, y: number) -> {
         Eq(e, e)
         Eq(Suc(X), Suc(X)),
@@ -27,7 +27,7 @@ Sentence {
     Add(x, y, z) -> {
         sum: "The sum of " + x + " and " + y + z,
         solved: "The solution is " + (x | y),
-    }
+    },
     Eq(x, y) -> x + " is equals to " + y,
 }
 
