@@ -3,11 +3,15 @@ use std::panic;
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub enum Token {
     Type(String),
-    Predicate(String),
+    PredicateName(String),
     Variable(String),
+    Args(String),
     Atom(String),
-    SentenceString(String),
+    SentenceDef(String),
+    DictName(String),
+    DictValue(Vec<Token>),
     Op(String),
+    XmlElem(Box<Token>),
     Main,
     EOF,
 }
@@ -54,24 +58,58 @@ impl Tokenizer {
         }
     }
 
+    fn tokenize_dict(&mut self, v: &mut Vec<Token>) -> Option<Token> {
+        while let Some(c) = self.peek() {
+            let mut s = String::new();
+            match c {
+                '{' => {
+                    self.pop();
+                    continue;
+                }
+                ':' | '"' => {
+                    v.push(self.tokenize_str().unwrap());
+                    self.pop();
+                    return self.tokenize_dict(v);
+                }
+                '}' | ',' => {
+                    return Some(Token::DictValue(v.to_vec()));
+                }
+                'a'..='z' => {
+                    s.push(c);
+                    self.pop();
+                    while let Some(c @ 'a'..='z') = self.peek() {
+                        self.pop();
+                        s.push(c);
+                    }
+                    return Some(Token::DictName(s.to_string()));
+                }
+                c if c.is_whitespace() => self.skip_whitespace(),
+                _ => panic!("Unexpected char: {}:{}", c, self.pos),
+            }
+        }
+        None
+    }
+
     fn tokenize_sentence(&mut self) -> Option<Token> {
         while let Some(c) = self.peek() {
             match c {
                 '-' | '+' => {
                     return self.tokenize_op();
                 }
-                '{' | '}' | ')' => {
-                    break;
+                '{' | ':' | ',' => {
+                    return self.tokenize_dict(&mut Vec::new());
                 }
-                '(' | ',' => {
+                '}' | ')' => break,
+                // '(' | ',' => {
+                //     break;
+                // }
+                '(' => {
                     break;
                 }
                 '"' | 'A'..='z' => {
                     return self.tokenize_str();
                 }
-                c if c.is_whitespace() => {
-                    self.skip_whitespace();
-                }
+                c if c.is_whitespace() => self.skip_whitespace(),
                 c => panic!("Unexpected char: {}:{}", c, self.pos),
             }
         }
@@ -120,7 +158,7 @@ impl Tokenizer {
                     while let Some(c) = self.peek() {
                         match c {
                             '"' => {
-                                return Some(Token::SentenceString(s));
+                                return Some(Token::SentenceDef(s));
                             }
                             _ => {
                                 s.push(c);
@@ -141,7 +179,11 @@ impl Tokenizer {
                             self.pop();
                             return Some(Token::Op(s.to_string()));
                         }
-                        _ => return Some(Token::Predicate(s.to_string())),
+                        "Main" => {
+                            self.pop();
+                            return Some(Token::Op(s.to_string()));
+                        }
+                        _ => return Some(Token::PredicateName(s.to_string())),
                     }
                 }
                 'a'..='z' => {
@@ -152,7 +194,7 @@ impl Tokenizer {
                                 self.pop();
                             }
                             _ => {
-                                return Some(Token::Variable(s));
+                                return Some(Token::Args(s));
                             }
                         }
                     }
@@ -165,7 +207,7 @@ impl Tokenizer {
         None
     }
 
-    fn peek_token(&mut self) -> &Option<Token> {
+    pub fn peek_token(&mut self) -> &Option<Token> {
         if self.next_token.is_none() {
             self.next_token = self.tokenize();
         }
