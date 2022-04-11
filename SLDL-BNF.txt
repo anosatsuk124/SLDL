@@ -1,6 +1,6 @@
 Program = Sentences
 Sentences = Sentence+
-Sentence = Predicate ("{" Index* ":" SentenceDef "}")+
+Sentence = Predicate ("{" Index ":" SentenceDef "}")+
 Predicate = PredicateName "(" Predicate+ ")" | PredicateName "(" Atom+ ")"
 Atom = <lowercase letter>+
 PredicateName = upper-camelcase
