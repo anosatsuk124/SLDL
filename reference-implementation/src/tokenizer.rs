@@ -1,3 +1,4 @@
+use crate::regexes::*;
 use regex::Regex;
 use std::{fmt::format, panic};
 
@@ -8,7 +9,7 @@ pub enum Token {
     Variable(String),
     Args(String),
     Atom(String),
-    SentenceDef(String),
+    Sentence(String),
     DictName(String),
     DictValue(Vec<Token>),
     Op(String),
@@ -34,47 +35,22 @@ impl Tokenizer {
     }
 
     pub fn tokenize(&self) -> Option<Token> {
-        let index = r"([a-z]+)";
-        let predicate_name = r"([A-Z]+\w*)";
-        let sentence_def = r"(.+)";
-        let atom = r"\w+";
-        let comma = r"\s*,\s*";
-        let colon = r"\s*:\s*";
-        let def_op = r"\s*->\s*";
-        let curly_bracket = (r"\s*\{\s*", r"\s*\}\s*");
-        let arg = format!(r"(\w+)");
-        let args = format!(r"(\(({Arg}{Comma})*{Arg}\s*)\)", Arg = arg, Comma = comma);
-        let predicate = format!(
-            r"({PredicateName}{Args})",
-            PredicateName = &predicate_name,
-            Args = &args,
-        );
-        let sentence = format!(
-            r"({Predicate}{DefOp}{OpenCurlyBracket}(({Index}{Colon}{SentenceDef})+{Comma})*({Index}{Colon}{SentenceDef}){CloseCurlyBracket}|{Predicate}{DefOp}{SentenceDef})",
-            Predicate = &predicate,
-            DefOp = &def_op,
-            OpenCurlyBracket = &curly_bracket.0,
-            CloseCurlyBracket = &curly_bracket.1,
-            SentenceDef = &sentence_def,
-            Index = &index,
-            Colon = &colon,
-            Comma = &comma,
-        );
-        let sentences = format!(
-            r"(Sentence{OpenCurlyBracket}({Sentence}{Comma})*{Sentence}+{CloseCurlyBracket})",
-            Sentence = &sentence,
-            OpenCurlyBracket = &curly_bracket.0,
-            CloseCurlyBracket = &curly_bracket.1,
-            Comma = &comma,
-        );
-        let program = sentences.clone();
+        match self.input {
+            _ => None,
+        }
+    }
 
-        println!("{}", sentences);
-        let re = Regex::new(&*sentences).unwrap();
+    pub fn apply_regex(&self) -> Vec<Token> {
+        let mut v = Vec::new();
+        let re = Regex::new(&SENTENCES).unwrap();
+
         let text = &*self.input;
+        println!("{}", text);
+        for cap in re.captures(text).unwrap().iter() {
+            println!("{:?}", cap);
+        }
 
-        println!("{:?}", re.captures(text));
-        None
+        v
     }
 
     pub fn peek_token(&mut self) -> &Option<Token> {

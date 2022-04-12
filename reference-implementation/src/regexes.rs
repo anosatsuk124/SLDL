@@ -11,7 +11,7 @@ lazy_static! {
     pub static ref CURLY_BRACKET: (&'static str, &'static str) = (r"\s*\{\s*", r"\s*\}\s*");
     pub static ref ARG: String = format!(r"(\w+)");
     pub static ref ARGS: String = format!(
-        r"\(\s*({Arg}\s*(?:{Comma}{Arg})*)?\s*\)",
+        r"((?:\(\s*(?:{Arg}{Comma})*{Arg}?\s*)\))",
         Arg = ARG.to_string(),
         Comma = COMMA.to_string()
     );
@@ -32,7 +32,7 @@ lazy_static! {
         Comma = COMMA.to_string(),
     );
     pub static ref SENTENCES: String = format!(
-        r"(Sentence{OpenCurlyBracket}({Sentence}{Comma})*{Sentence}+{CloseCurlyBracket})",
+        r"(?P<Sentences>Sentence{OpenCurlyBracket}({Sentence}{Comma})*{Sentence}+{CloseCurlyBracket})",
         Sentence = SENTENCE.to_string(),
         OpenCurlyBracket = CURLY_BRACKET.0.to_string(),
         CloseCurlyBracket = CURLY_BRACKET.1.to_string(),
