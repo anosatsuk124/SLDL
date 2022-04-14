@@ -1,19 +1,13 @@
-use crate::regexes::*;
-use regex::Regex;
-use std::{fmt::format, panic};
+use std::panic;
 
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub enum Token {
     Type(String),
-    PredicateName(String),
+    Predicate(String),
     Variable(String),
-    Args(String),
     Atom(String),
-    Sentence(String),
-    DictName(String),
-    DictValue(Vec<Token>),
+    SentenceString(String),
     Op(String),
-    XmlElem(Box<Token>),
     Main,
     EOF,
 }
@@ -34,23 +28,144 @@ impl Tokenizer {
         }
     }
 
-    pub fn tokenize(&self) -> Option<Token> {
-        match self.input {
-            _ => None,
+    fn peek(&self) -> Option<char> {
+        self.input.chars().nth(self.pos)
+    }
+
+    fn pop(&mut self) -> Option<char> {
+        self.pos += 1;
+        self.input.chars().nth(self.pos - 1)
+    }
+
+    pub fn tokenize(&mut self) -> Option<Token> {
+        loop {
+            match self.peek() {
+                None => return None,
+                Some(c) => match c {
+                    'A'..='Z' => return self.tokenize_str(),
+                    c if c.is_ascii() => {
+                        self.pop();
+                        return self.tokenize_sentence();
+                    }
+                    c if c.is_whitespace() => self.skip_whitespace(),
+                    c => panic!("Unexpected char: {}:{}", c, self.pos),
+                },
+            }
         }
     }
 
-    pub fn apply_regex(&self) -> Vec<Token> {
-        let mut v = Vec::new();
-        let re = Regex::new(&SENTENCES).unwrap();
-
-        let text = &*self.input;
-        println!("{}", text);
-        println!("{:?}", re.captures(text));
-        v
+    fn tokenize_sentence(&mut self) -> Option<Token> {
+        while let Some(c) = self.peek() {
+            match c {
+                '-' | '+' => {
+                    return self.tokenize_op();
+                }
+                '{' | '}' | ')' => {
+                    break;
+                }
+                '(' | ',' => {
+                    break;
+                }
+                '"' | 'A'..='z' => {
+                    return self.tokenize_str();
+                }
+                c if c.is_whitespace() => {
+                    self.skip_whitespace();
+                }
+                c => panic!("Unexpected char: {}:{}", c, self.pos),
+            }
+        }
+        None
     }
 
-    pub fn peek_token(&mut self) -> &Option<Token> {
+    fn skip_whitespace(&mut self) {
+        while let Some(c) = self.peek() {
+            match c {
+                c if c.is_whitespace() => {
+                    self.pop();
+                }
+                _ => {
+                    break;
+                }
+            }
+        }
+    }
+
+    fn tokenize_op(&mut self) -> Option<Token> {
+        if let Some(c) = self.peek() {
+            match c {
+                '-' => {
+                    self.pop();
+                    if let Some('>') = self.peek() {
+                        return Some(Token::Op("->".to_string()));
+                    }
+                }
+                '+' => {
+                    return Some(Token::Op(c.to_string()));
+                }
+                _ => {
+                    panic!("Unexpected char: {}:{}", c, self.pos);
+                }
+            }
+        }
+        None
+    }
+
+    fn tokenize_str(&mut self) -> Option<Token> {
+        if let Some(c) = self.peek() {
+            let mut s = String::new();
+            match c {
+                '"' => {
+                    self.pop();
+                    while let Some(c) = self.peek() {
+                        match c {
+                            '"' => {
+                                return Some(Token::SentenceString(s));
+                            }
+                            _ => {
+                                s.push(c);
+                                self.pop();
+                            }
+                        }
+                    }
+                }
+                'A'..='Z' => {
+                    s.push(c);
+                    self.pop();
+                    while let Some(c @ 'a'..='z') = self.peek() {
+                        self.pop();
+                        s.push(c);
+                    }
+                    match &*s {
+                        "Sentence" => {
+                            self.pop();
+                            return Some(Token::Op(s.to_string()));
+                        }
+                        _ => return Some(Token::Predicate(s.to_string())),
+                    }
+                }
+                'a'..='z' => {
+                    while let Some(c) = self.peek() {
+                        match c {
+                            'a'..='z' => {
+                                s.push(c);
+                                self.pop();
+                            }
+                            _ => {
+                                return Some(Token::Variable(s));
+                            }
+                        }
+                    }
+                }
+                _ => {
+                    panic!("Unexpected char: {}:{}", c, self.pos);
+                }
+            }
+        }
+        None
+    }
+
+    fn peek_token(&mut self) -> &Option<Token> {
         if self.next_token.is_none() {
             self.next_token = self.tokenize();
         }

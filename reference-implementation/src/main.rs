@@ -1,8 +1,5 @@
 mod parser;
-mod regexes;
 mod tokenizer;
-use crate::regexes::*;
-use regex::Regex;
 use std::fs;
 
 fn main() {
@@ -11,13 +8,13 @@ fn main() {
 
     let code = fs::read_to_string(filepath).unwrap();
 
-    let token = tokenizer::Tokenizer::new(code.clone());
-    token.apply_regex();
-    token.tokenize();
-    let split = r#","#;
-    let text = code;
-    // println!("{:?}", tokenizer.tokenize());
-    // let mut parser = parser::Parser::new(tokenizer);
-    // let node = parser.parse_sentence();
-    // println!("{:?}", node);
+    let mut token = tokenizer::Tokenizer::new(code);
+    loop {
+        let tokenized = token.tokenize();
+        if !tokenized.is_none() {
+            println!("{:?}", tokenized);
+        } else {
+            break;
+        }
+    }
 }
