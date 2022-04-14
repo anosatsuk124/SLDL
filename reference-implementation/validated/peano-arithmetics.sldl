@@ -1,4 +1,4 @@
-Sentence {
+Sentences {
     Suc(n) -> "The succesor of" + n,
     Add(x, y, z) -> "The sum of " + x + " and " + y + z,
     Eq(x, y) -> x + " is equals to " + y,

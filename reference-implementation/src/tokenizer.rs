@@ -7,9 +7,20 @@ pub enum Token {
     Variable(String),
     Atom(String),
     SentenceString(String),
-    Op(String),
+    Op(Op),
     Main,
     EOF,
+}
+
+#[derive(PartialEq, Eq, Clone, Debug)]
+pub enum Op {
+    OpenCurly,
+    CloseCurly,
+    OpenParenthesis,
+    CloseParenthesis,
+    StringConcat,
+    DefArrow,
+    SentencesDef,
 }
 
 #[derive(Clone, Debug)]
@@ -97,11 +108,11 @@ impl Tokenizer {
                 '-' => {
                     self.pop();
                     if let Some('>') = self.peek() {
-                        return Some(Token::Op("->".to_string()));
+                        return Some(Token::Op(Op::DefArrow));
                     }
                 }
                 '+' => {
-                    return Some(Token::Op(c.to_string()));
+                    return Some(Token::Op(Op::StringConcat));
                 }
                 _ => {
                     panic!("Unexpected char: {}:{}", c, self.pos);
@@ -137,9 +148,9 @@ impl Tokenizer {
                         s.push(c);
                     }
                     match &*s {
-                        "Sentence" => {
+                        "Sentences" => {
                             self.pop();
-                            return Some(Token::Op(s.to_string()));
+                            return Some(Token::Op(Op::SentencesDef));
                         }
                         _ => return Some(Token::Predicate(s.to_string())),
                     }
