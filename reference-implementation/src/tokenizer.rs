@@ -46,10 +46,7 @@ impl Tokenizer {
 
         let text = &*self.input;
         println!("{}", text);
-        for cap in re.captures(text).unwrap().iter() {
-            println!("{:?}", cap);
-        }
-
+        println!("{:?}", re.captures(text));
         v
     }
 

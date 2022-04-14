@@ -50,7 +50,7 @@ impl Parser {
 
                 while let Some(token) = self.tokenizer.peek_token() {
                     match token {
-                        Token::SentenceDef(s) => {
+                        Token::Sentence(s) => {
                             let sentence_def = Node::String(s.clone());
                             self.tokenizer.pop_token();
                             vec.push(sentence_def);
