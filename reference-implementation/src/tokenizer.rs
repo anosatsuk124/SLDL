@@ -3,10 +3,10 @@ use std::panic;
 #[derive(PartialEq, Eq, Clone, Debug)]
 pub enum Token {
     Type(String),
-    Predicate(String),
+    PredicateName(String),
     Variable(String),
     Atom(String),
-    SentenceString(String),
+    String(String),
     Op(Op),
     Main,
     EOF,
@@ -20,6 +20,9 @@ pub enum Op {
     CloseParenthesis,
     StringConcat,
     DefArrow,
+    Desjunctive,
+    Colon,
+    Comma,
     SentencesDef,
 }
 
@@ -68,11 +71,8 @@ impl Tokenizer {
     fn tokenize_sentence(&mut self) -> Option<Token> {
         while let Some(c) = self.peek() {
             match c {
-                '-' | '+' | '{' | '}' | '(' | ')' => {
+                '-' | '+' | '{' | '}' | '(' | ')' | ':' | ',' | '|' => {
                     return self.tokenize_op();
-                }
-                ',' => {
-                    break;
                 }
                 '"' | 'A'..='z' => {
                     return self.tokenize_str();
@@ -107,6 +107,9 @@ impl Tokenizer {
                 '(' => return Some(Token::Op(Op::OpenParenthesis)),
                 ')' => return Some(Token::Op(Op::CloseParenthesis)),
                 '+' => return Some(Token::Op(Op::StringConcat)),
+                ',' => return Some(Token::Op(Op::Comma)),
+                ':' => return Some(Token::Op(Op::Colon)),
+                '|' => return Some(Token::Op(Op::Desjunctive)),
                 '-' => {
                     self.pop();
                     if let Some('>') = self.peek() {
@@ -130,7 +133,7 @@ impl Tokenizer {
                     while let Some(c) = self.peek() {
                         match c {
                             '"' => {
-                                return Some(Token::SentenceString(s));
+                                return Some(Token::String(s));
                             }
                             _ => {
                                 s.push(c);
@@ -150,7 +153,7 @@ impl Tokenizer {
                         "Sentences" => {
                             return Some(Token::Op(Op::SentencesDef));
                         }
-                        _ => return Some(Token::Predicate(s.to_string())),
+                        _ => return Some(Token::PredicateName(s.to_string())),
                     }
                 }
                 'a'..='z' => {
