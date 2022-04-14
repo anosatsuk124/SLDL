@@ -68,13 +68,10 @@ impl Tokenizer {
     fn tokenize_sentence(&mut self) -> Option<Token> {
         while let Some(c) = self.peek() {
             match c {
-                '-' | '+' => {
+                '-' | '+' | '{' | '}' | '(' | ')' => {
                     return self.tokenize_op();
                 }
-                '{' | '}' | ')' => {
-                    break;
-                }
-                '(' | ',' => {
+                ',' => {
                     break;
                 }
                 '"' | 'A'..='z' => {
@@ -105,14 +102,16 @@ impl Tokenizer {
     fn tokenize_op(&mut self) -> Option<Token> {
         if let Some(c) = self.peek() {
             match c {
+                '{' => return Some(Token::Op(Op::OpenCurly)),
+                '}' => return Some(Token::Op(Op::CloseCurly)),
+                '(' => return Some(Token::Op(Op::OpenParenthesis)),
+                ')' => return Some(Token::Op(Op::CloseParenthesis)),
+                '+' => return Some(Token::Op(Op::StringConcat)),
                 '-' => {
                     self.pop();
                     if let Some('>') = self.peek() {
                         return Some(Token::Op(Op::DefArrow));
                     }
-                }
-                '+' => {
-                    return Some(Token::Op(Op::StringConcat));
                 }
                 _ => {
                     panic!("Unexpected char: {}:{}", c, self.pos);
@@ -149,7 +148,6 @@ impl Tokenizer {
                     }
                     match &*s {
                         "Sentences" => {
-                            self.pop();
                             return Some(Token::Op(Op::SentencesDef));
                         }
                         _ => return Some(Token::Predicate(s.to_string())),
