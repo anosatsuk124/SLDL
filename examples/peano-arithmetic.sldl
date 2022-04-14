@@ -22,7 +22,7 @@ Predicate {
     },
 }
 
-Sentence {
+Sentences {
     Suc(n) -> "The succesor of" + n,
     Add(x, y, z) -> {
         sum: "The sum of " + x + " and " + y + z,
