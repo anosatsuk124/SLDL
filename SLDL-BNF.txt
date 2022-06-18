@@ -1,4 +1,4 @@
-Program = Sentences
+License = Sentences
 Sentences = Sentence+
 Sentence = Predicate ("{" Index ":" SentenceDef "}")+
 Predicate = PredicateName "(" Predicate+ ")" | PredicateName "(" Atom+ ")"
