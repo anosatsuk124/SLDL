@@ -2,6 +2,6 @@
 
 A markup language to make your license description structured.
 
-This is influenced by:
+**Inspired by**:
 - XML
 - Prolog
